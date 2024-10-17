@@ -13,24 +13,34 @@ const Input = styled.input`
 
 const Box = styled.div`
   max-width: 500px;
+  margin-bottom: 1rem;
 `;
 
-// Fetcher function
-const fetcher = (url) =>
-  fetch(url).then((res) => {
-    if (!res.ok) {
-      throw new Error("Network response was not ok");
-    }
-    return res.json();
-  });
+const WatchlistContainer = styled.div`
+  margin-top: 2rem;
+`;
+
+const WatchlistItem = styled.div`
+  border-bottom: 1px solid #ccc;
+  padding: 1rem 0;
+`;
 
 export default function HomePage() {
+  // Fetcher function
+  const fetcher = (url) =>
+    fetch(url).then((res) => {
+      if (!res.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return res.json();
+    });
   const [urlNetzkino, setUrlNetzkino] = useState(null);
   const [imdbIds, setImdbIds] = useState([]);
   const [moviesData, setMoviesData] = useState({});
   const { data: data1, error: error1 } = useSWR(urlNetzkino || null, fetcher);
   const [input, setInput] = useState("");
   const [debouncedInput] = useDebounce(input, 300);
+  const [watchlist, setWatchlist] = useState([]); // Watchlist state
 
   // Effect to update urlNetzkino when debounced input changes
   useEffect(() => {
@@ -47,8 +57,6 @@ export default function HomePage() {
 
   useEffect(() => {
     if (data1) {
-      console.log("data1", data1);
-
       const imdbLinks = data1.posts
         .map((movie) => {
           const imdbLink = movie.custom_fields["IMDb-Link"][0];
@@ -56,21 +64,17 @@ export default function HomePage() {
           if (imdbIdMatch) {
             return imdbIdMatch[0]; // Return the 'tt' ID
           } else {
-            console.error("No valid IMDb ID found in the link:", imdbLink);
             return null;
           }
         })
         .filter(Boolean); // Remove null values
 
-      console.log("imdbIds", imdbLinks);
       setImdbIds(imdbLinks); // Store the IMDb IDs in state
     }
   }, [data1]);
 
-  // Fetch data for each IMDb ID dynamically and store in state
   useEffect(() => {
     if (imdbIds.length > 0) {
-      // Loop through each imdbId and fetch movie data
       imdbIds.forEach((imdbId) => {
         const url2 = `https://api.themoviedb.org/3/find/${imdbId}?api_key=78247849b9888da02ffb1655caa3a9b9&language=de&external_source=imdb_id`;
 
@@ -89,18 +93,22 @@ export default function HomePage() {
     }
   }, [imdbIds]);
 
+  const addToWatchlist = (movie) => {
+    setWatchlist((prevList) => [...prevList, movie]);
+  };
+
+  const removeFromWatchlist = (imdbId) => {
+    setWatchlist((prevList) =>
+      prevList.filter((movie) => movie.imdbId !== imdbId)
+    );
+  };
+
   // Handle loading and error states
   if (!data1 && !error1 && urlNetzkino)
     return <div>Loading data from first URL...</div>;
-  if (error1) {
-    console.error("Error loading data from first URL!", error1);
-    return <div>Error loading data from first URL!</div>;
-  }
+  if (error1) return <div>Error loading data from first URL!</div>;
 
-  // bypass next/Image components domain restriction! Caution! Security concern.
-  const customLoader = ({ src }) => {
-    return src;
-  };
+  const customLoader = ({ src }) => src;
 
   return (
     <div style={{ textAlign: "center", margin: "auto" }}>
@@ -110,7 +118,6 @@ export default function HomePage() {
         placeholder="Search for a movie..."
       />
       <br />
-      {/* Render fetched movie data for each IMDb ID */}
       {imdbIds.map((imdbId) => (
         <div key={imdbId}>
           {moviesData[imdbId] ? (
