@@ -10,39 +10,33 @@ const Input = styled.input`
   line-height: 1.5;
 `;
 
+// Fetcher function
+const fetcher = (url) =>
+  fetch(url).then((res) => {
+    if (!res.ok) {
+      throw new Error("Network response was not ok");
+    }
+    return res.json();
+  });
+
 export default function HomePage() {
-  // Data fetching
-  const [url, setUrl] = useState(null);
-  const fetcher = (url) => fetch(url).then((res) => res.json());
-  const { data, error } = useSWR(url, fetcher, { shouldRetryOnError: false });
-  const isLoading = !error && !data && !!url;
-
-  // State for search input
+  const [urlNetzkino, setUrlNetzkino] = useState(null);
+  const { data: data1, error: error1 } = useSWR(urlNetzkino || null, fetcher);
   const [input, setInput] = useState("");
-  const [debouncedInput] = useDebounce(input, 300); // Debounce input for 300ms
+  const [debouncedInput] = useDebounce(input, 300);
 
-  // Effect to update URL when debounced input changes
+  // Effect to update urlNetzkino when debounced input changes
   useEffect(() => {
     if (debouncedInput) {
-      const replaceSpacesWithPlus = (input) => {
-        return input.split(" ").join("+");
-      };
+      const replaceSpacesWithPlus = (input) => input.split(" ").join("+");
       const transformedValue = replaceSpacesWithPlus(debouncedInput);
-      setUrl(
+      setUrlNetzkino(
         `https://api.netzkino.de.simplecache.net/capi-2.0a/search?q=${transformedValue}&d=devtest`
       );
     } else {
-      setUrl(null); // Clear the URL if input is empty
+      setUrlNetzkino(null);
     }
   }, [debouncedInput]);
-
-  const imdbLinks = data?.posts.map((movie) => {
-    return movie.custom_fields["IMDb-Link"][0].replace(
-      "http:/www.imdb.com/title/",
-      ""
-    );
-  });
-  console.log(imdbLinks);
 
   return (
     <div style={{ textAlign: "center", margin: "auto" }}>
