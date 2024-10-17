@@ -1,33 +1,39 @@
-import React from "react";
+import React, { useState } from "react";
 import useSWR from "swr";
 import InputComp from "@/components/SearchInput/SearchInput";
-import { useState } from "react";
 import styled from "styled-components";
 
 export default function HomePage() {
-  const [keyWords, setKeywords] = useState("blanchett");
-
   // Data fetching
   const [url, setUrl] = useState(null);
   const fetcher = (url) => fetch(url).then((res) => res.json());
   const { data, error } = useSWR(url, fetcher, { shouldRetryOnError: false });
   const isLoading = !error && !data && !!url;
 
-  // Keyword Search
-  const handleSearch = () => {
+  // Search
+  function handleChange(e) {
+    const input = e.target.value;
+    const replaceSpacesWithPlus = (input) => {
+      return input.split(" ").join("+");
+    };
+    const transformedValue = replaceSpacesWithPlus(input);
     setUrl(
-      `https://api.netzkino.de.simplecache.net/capi-2.0a/search?q=${keyWords}&d=devtest`
+      `https://api.netzkino.de.simplecache.net/capi-2.0a/search?q=${transformedValue}&d=devtest`
     );
-    console.log("url", url);
-  };
+  }
 
   return (
-    <div>
-      <InputComp
-        id="keywords"
-        value={keyWords}
-        onChange={(e) => setKeywords(e.target.value)}
-      />
+    <div style={{ textAlign: "center", margin: "auto" }}>
+      <input onChange={handleChange} />
+      <br />
+      {isLoading && <p>Loading...</p>}
+      {error && <p>Error fetching data</p>}
+      {data &&
+        data.posts.map((movie, index) => (
+          <div key={index} movie={movie}>
+            title: {movie.title},{" "}
+          </div>
+        ))}
     </div>
   );
 }
