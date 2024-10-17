@@ -17,7 +17,8 @@
     "react-dom": "18.2.0",
     "styled-components": "^6.1.13",
     "swr": "^2.2.5",
-    "use-debounce": "^10.0.4"
+    "use-debounce": "^10.0.4",
+    "use-local-storage-state": "^19.4.1"
   },
   "devDependencies": {
     "@svgr/webpack": "^8.0.1",

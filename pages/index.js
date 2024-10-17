@@ -3,6 +3,7 @@ import useSWR from "swr";
 import styled from "styled-components";
 import { useDebounce } from "use-debounce";
 import Image from "next/image";
+import useLocalStorageState from "use-local-storage-state";
 
 const Input = styled.input`
   padding: 0.2rem;
@@ -13,27 +14,47 @@ const Input = styled.input`
 
 const Box = styled.div`
   max-width: 500px;
+  margin-bottom: 1rem;
 `;
 
-// Fetcher function
-const fetcher = (url) =>
-  fetch(url).then((res) => {
-    if (!res.ok) {
-      throw new Error("Network response was not ok");
-    }
-    return res.json();
-  });
+const WatchlistContainer = styled.div`
+  margin-top: 2rem;
+`;
+
+const WatchlistItem = styled.div`
+  border-bottom: 1px solid #ccc;
+  padding: 1rem 0;
+  max-width: 500px;
+`;
 
 export default function HomePage() {
+  // Fetcher function
+  const fetcher = (url) =>
+    fetch(url).then((res) => {
+      if (!res.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return res.json();
+    });
   const [urlNetzkino, setUrlNetzkino] = useState(null);
   const [imdbIds, setImdbIds] = useState([]);
   const [moviesData, setMoviesData] = useState({});
   const { data: data1, error: error1 } = useSWR(urlNetzkino || null, fetcher);
   const [input, setInput] = useState("");
   const [debouncedInput] = useDebounce(input, 300);
+  const [watchlist, setWatchlist] = useLocalStorageState("watchlist", {
+    defaultValue: [],
+  });
 
   // Effect to update urlNetzkino when debounced input changes
   useEffect(() => {
+    // If the input is cleared, reset the URL and results
+    if (input === "") {
+      setUrlNetzkino(null); // Clear URL to stop fetching
+      setImdbIds([]); // Clear previous movie results
+      setMoviesData({}); // Clear previous movie data
+      return;
+    }
     if (debouncedInput) {
       const replaceSpacesWithPlus = (input) => input.split(" ").join("+");
       const transformedValue = replaceSpacesWithPlus(debouncedInput);
@@ -43,12 +64,10 @@ export default function HomePage() {
     } else {
       setUrlNetzkino(null);
     }
-  }, [debouncedInput]);
+  }, [debouncedInput, input]);
 
   useEffect(() => {
     if (data1) {
-      console.log("data1", data1);
-
       const imdbLinks = data1.posts
         .map((movie) => {
           const imdbLink = movie.custom_fields["IMDb-Link"][0];
@@ -56,21 +75,17 @@ export default function HomePage() {
           if (imdbIdMatch) {
             return imdbIdMatch[0]; // Return the 'tt' ID
           } else {
-            console.error("No valid IMDb ID found in the link:", imdbLink);
             return null;
           }
         })
         .filter(Boolean); // Remove null values
 
-      console.log("imdbIds", imdbLinks);
       setImdbIds(imdbLinks); // Store the IMDb IDs in state
     }
   }, [data1]);
 
-  // Fetch data for each IMDb ID dynamically and store in state
   useEffect(() => {
     if (imdbIds.length > 0) {
-      // Loop through each imdbId and fetch movie data
       imdbIds.forEach((imdbId) => {
         const url2 = `https://api.themoviedb.org/3/find/${imdbId}?api_key=78247849b9888da02ffb1655caa3a9b9&language=de&external_source=imdb_id`;
 
@@ -89,18 +104,23 @@ export default function HomePage() {
     }
   }, [imdbIds]);
 
+  const addToWatchlist = (movie) => {
+    console.log(movie);
+    setWatchlist((prevList) => [...prevList, movie]);
+  };
+
+  const removeFromWatchlist = (id) => {
+    setWatchlist((prevList) =>
+      prevList.filter((movie) => movie.movie_results[0].id !== id)
+    );
+  };
+
   // Handle loading and error states
   if (!data1 && !error1 && urlNetzkino)
     return <div>Loading data from first URL...</div>;
-  if (error1) {
-    console.error("Error loading data from first URL!", error1);
-    return <div>Error loading data from first URL!</div>;
-  }
+  if (error1) return <div>Error loading data from first URL!</div>;
 
-  // bypass next/Image components domain restriction! Caution! Security concern.
-  const customLoader = ({ src }) => {
-    return src;
-  };
+  const customLoader = ({ src }) => src;
 
   return (
     <div style={{ textAlign: "center", margin: "auto" }}>
@@ -110,7 +130,6 @@ export default function HomePage() {
         placeholder="Search for a movie..."
       />
       <br />
-      {/* Render fetched movie data for each IMDb ID */}
       {imdbIds.map((imdbId) => (
         <div key={imdbId}>
           {moviesData[imdbId] ? (
@@ -130,12 +149,43 @@ export default function HomePage() {
                 width={100}
                 height={100}
               />
+              <button onClick={() => addToWatchlist(moviesData[imdbId])}>
+                Add to Watchlist
+              </button>
             </Box>
           ) : (
             <p>Loading data for IMDb ID: {imdbId}...</p>
           )}
         </div>
       ))}
+
+      <WatchlistContainer>
+        <h2>Your Watchlist</h2>
+        {watchlist.length === 0 ? (
+          <p>No movies in your watchlist.</p>
+        ) : (
+          watchlist.map((movie, index) => (
+            <WatchlistItem key={index}>
+              <h4>{movie?.movie_results?.[0]?.title || "Unknown"}</h4>
+              <Image
+                unoptimized={customLoader}
+                src={`https://image.tmdb.org/t/p/w500${movie?.movie_results?.[0]?.poster_path}`}
+                alt={movie?.movie_results?.[0]?.title}
+                layout="responsive"
+                width={100}
+                height={100}
+              />
+              <button
+                onClick={() =>
+                  removeFromWatchlist(movie?.movie_results?.[0]?.id)
+                }
+              >
+                Remove from Watchlist
+              </button>
+            </WatchlistItem>
+          ))
+        )}
+      </WatchlistContainer>
     </div>
   );
 }
