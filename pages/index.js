@@ -3,6 +3,7 @@ import useSWR from "swr";
 import styled from "styled-components";
 import { useDebounce } from "use-debounce";
 import Image from "next/image";
+import useLocalStorageState from "use-local-storage-state";
 
 const Input = styled.input`
   padding: 0.2rem;
@@ -23,6 +24,7 @@ const WatchlistContainer = styled.div`
 const WatchlistItem = styled.div`
   border-bottom: 1px solid #ccc;
   padding: 1rem 0;
+  max-width: 500px;
 `;
 
 export default function HomePage() {
@@ -40,10 +42,19 @@ export default function HomePage() {
   const { data: data1, error: error1 } = useSWR(urlNetzkino || null, fetcher);
   const [input, setInput] = useState("");
   const [debouncedInput] = useDebounce(input, 300);
-  const [watchlist, setWatchlist] = useState([]); // Watchlist state
+  const [watchlist, setWatchlist] = useLocalStorageState("watchlist", {
+    defaultValue: [],
+  });
 
   // Effect to update urlNetzkino when debounced input changes
   useEffect(() => {
+    // If the input is cleared, reset the URL and results
+    if (input === "") {
+      setUrlNetzkino(null); // Clear URL to stop fetching
+      setImdbIds([]); // Clear previous movie results
+      setMoviesData({}); // Clear previous movie data
+      return;
+    }
     if (debouncedInput) {
       const replaceSpacesWithPlus = (input) => input.split(" ").join("+");
       const transformedValue = replaceSpacesWithPlus(debouncedInput);
@@ -53,7 +64,7 @@ export default function HomePage() {
     } else {
       setUrlNetzkino(null);
     }
-  }, [debouncedInput]);
+  }, [debouncedInput, input]);
 
   useEffect(() => {
     if (data1) {
@@ -94,12 +105,13 @@ export default function HomePage() {
   }, [imdbIds]);
 
   const addToWatchlist = (movie) => {
+    console.log(movie);
     setWatchlist((prevList) => [...prevList, movie]);
   };
 
-  const removeFromWatchlist = (imdbId) => {
+  const removeFromWatchlist = (id) => {
     setWatchlist((prevList) =>
-      prevList.filter((movie) => movie.imdbId !== imdbId)
+      prevList.filter((movie) => movie.movie_results[0].id !== id)
     );
   };
 
@@ -163,7 +175,11 @@ export default function HomePage() {
                 width={100}
                 height={100}
               />
-              <button onClick={() => removeFromWatchlist(movie.imdbId)}>
+              <button
+                onClick={() =>
+                  removeFromWatchlist(movie?.movie_results?.[0]?.id)
+                }
+              >
                 Remove from Watchlist
               </button>
             </WatchlistItem>
