@@ -3,6 +3,13 @@ import useSWR from "swr";
 import styled from "styled-components";
 import { useDebounce } from "use-debounce";
 
+const Input = styled.input`
+  padding: 0.2rem;
+  border-radius: 4px;
+  width: 100%;
+  line-height: 1.5;
+`;
+
 export default function HomePage() {
   // Data fetching
   const [url, setUrl] = useState(null);
@@ -29,9 +36,17 @@ export default function HomePage() {
     }
   }, [debouncedInput]);
 
+  const imdbLinks = data?.posts.map((movie) => {
+    return movie.custom_fields["IMDb-Link"][0].replace(
+      "http:/www.imdb.com/title/",
+      ""
+    );
+  });
+  console.log(imdbLinks);
+
   return (
     <div style={{ textAlign: "center", margin: "auto" }}>
-      <input
+      <Input
         value={input}
         onChange={(e) => setInput(e.target.value)}
         placeholder="Search for a movie..."
