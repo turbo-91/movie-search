@@ -137,12 +137,39 @@ export default function HomePage() {
                 width={100}
                 height={100}
               />
+              <button onClick={() => addToWatchlist(moviesData[imdbId])}>
+                Add to Watchlist
+              </button>
             </Box>
           ) : (
             <p>Loading data for IMDb ID: {imdbId}...</p>
           )}
         </div>
       ))}
+
+      <WatchlistContainer>
+        <h2>Your Watchlist</h2>
+        {watchlist.length === 0 ? (
+          <p>No movies in your watchlist.</p>
+        ) : (
+          watchlist.map((movie, index) => (
+            <WatchlistItem key={index}>
+              <h4>{movie?.movie_results?.[0]?.title || "Unknown"}</h4>
+              <Image
+                unoptimized={customLoader}
+                src={`https://image.tmdb.org/t/p/w500${movie?.movie_results?.[0]?.poster_path}`}
+                alt={movie?.movie_results?.[0]?.title}
+                layout="responsive"
+                width={100}
+                height={100}
+              />
+              <button onClick={() => removeFromWatchlist(movie.imdbId)}>
+                Remove from Watchlist
+              </button>
+            </WatchlistItem>
+          ))
+        )}
+      </WatchlistContainer>
     </div>
   );
 }
