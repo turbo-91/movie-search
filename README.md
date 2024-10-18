@@ -1,12 +1,6 @@
-# New Next Project
+# Movie Search
 
-This project was created from the Spiced Academy `next` template.
-
-You can download the project by running this command in your terminal:
-
-```bash
-npx -y ghcd@latest spiced-academy/fs-web-exercises/tree/main/templates/next my-app -i
-```
+A feature to search for and display movies based on the Netzkino and the IMDb Api.
 
 ## Development
 
