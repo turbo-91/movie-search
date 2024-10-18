@@ -53,9 +53,10 @@ export default function HomePage() {
       <Input
         value={input}
         onChange={(e) => setInput(e.target.value)}
-        placeholder="Search for a movie..."
+        placeholder="Suchbegriff eingeben..."
+        data-testid="search-input"
       />
-      <MovieGrid>
+      <MovieGrid role="grid">
         {imdbIds.map((imdbId) =>
           moviesData[imdbId] ? (
             <MovieCard key={imdbId} movie={moviesData[imdbId]} />
