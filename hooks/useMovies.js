@@ -40,7 +40,9 @@ export function useMovies(input) {
       const imdbLinks = netzkinoData.posts
         .map((movie) => {
           const imdbLink = movie.custom_fields["IMDb-Link"][0];
-          return imdbLink.match(/tt\d+/)?.[0] || null;
+          const parts = imdbLink.split("/");
+          const imdbId = parts.find((part) => part.startsWith("tt"));
+          return imdbId || null;
         })
         .filter(Boolean);
 
@@ -59,12 +61,14 @@ export function useMovies(input) {
         );
 
         const results = await Promise.all(requests);
-        const movieDataById = imdbIds.reduce((acc, id, index) => {
-          acc[id] = results[index];
-          return acc;
-        }, {});
 
-        setMoviesData(movieDataById);
+        // Create the movieDataById object using forEach instead of reduce
+        const movieDataById = {};
+        imdbIds.forEach((id, index) => {
+          movieDataById[id] = results[index]; // Assign results to each IMDb ID
+        });
+
+        setMoviesData(movieDataById); // Set the state with the new movie data object
       };
 
       fetchMovieData();
