@@ -55,8 +55,6 @@ export default function HomePage() {
         onChange={(e) => setInput(e.target.value)}
         placeholder="Search for a movie..."
       />
-
-      {/* Render Search Results */}
       <MovieGrid>
         {imdbIds.map((imdbId) =>
           moviesData[imdbId] ? (
