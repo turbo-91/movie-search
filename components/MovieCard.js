@@ -64,7 +64,7 @@ const MovieCard = ({ movie, onAction, actionLabel }) => {
     : "No overview available";
 
   return (
-    <Box>
+    <Box role="article">
       <Title>{movieTitle}</Title>
       <PosterImage src={posterUrl} alt={movieTitle} />
     </Box>
